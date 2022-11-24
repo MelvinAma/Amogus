@@ -1,6 +1,0 @@
-cmake_minimum_required(VERSION 3.23)
-project(FlappyBird C)
-
-set(CMAKE_C_STANDARD 99)
-
-add_executable(FlappyBird time4timer/main.c time4timer/Obstacles.c)
