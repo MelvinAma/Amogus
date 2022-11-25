@@ -55,9 +55,12 @@ int main(void) {
 	SPI2CONSET = 0x8000;
 	
 	display_init();
-	display_string(0, "Flappy Birb");
-	display_string(3, "Welcome!");
-	display_update();
+	display_string(0, "Flappy Birb!");
+    display_string(1, "Press any");
+    display_string(2, "key to");
+    display_string(3, "continue");
+
+    display_update();
 	
 	display_image(96, icon);
 	
