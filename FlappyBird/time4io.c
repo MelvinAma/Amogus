@@ -4,7 +4,6 @@
 
 int getsw(void) {
 
-    // shift bits 11-8 to the right, and with 1111 to remove all other values
     int sw = (PORTD >> 8) & 0xF;
 
     return sw;
@@ -12,7 +11,6 @@ int getsw(void) {
 
 int getbtns(void) {
 
-    // shift bits 7-5 to the right, and with 111 to remove all other values
     int btn = (PORTD >> 5) & 0x7;
 
     return btn;
