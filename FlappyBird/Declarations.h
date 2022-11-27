@@ -9,17 +9,29 @@
 
 /* Declare display-related functions from mipslabfunc.c */
 void display_image(int x, const uint8_t *data);
+
 void display_init(void);
+
 void display_string(int line, char *s);
+
 void display_update(void);
+
 uint8_t spi_send_recv(uint8_t data);
 
+extern gameState;
+int x;
+int y;
+
 /* Declare lab-related functions from mipslabfunc.c */
-char * itoaconv( int num );
+char *itoaconv(int num);
+
 void labwork(void);
-int nextprime( int inval );
+
+int nextprime(int inval);
+
 void quicksleep(int cyc);
-void tick( unsigned int * timep );
+
+void tick(unsigned int *timep);
 
 /* Declare display_debug - a function to help debugging.
 
@@ -33,12 +45,14 @@ void tick( unsigned int * timep );
    repeated calls to display_image; display_image overwrites
    about half of the digits shown by display_debug.
 */
-void display_debug( volatile int * const addr );
+void display_debug(volatile int *const addr);
 
 /* Declare bitmap array containing font */
-extern const uint8_t const font[128*8];
+extern const uint8_t const font[128 * 8];
 /* Declare bitmap array containing icon */
 extern const uint8_t const icon[128];
+/* Declare bitmap array containing the canvas */
+extern const uint8_t const canvas[128 * 4]; // 128*4 since 4*8=36, which is the display's height
 /* Declare text buffer for display output */
 extern char textbuffer[4][16];
 
@@ -48,8 +62,25 @@ extern char textbuffer[4][16];
    specified in the laboratory instructions. */
 /* Written as part of asm lab: delay, time2string */
 void delay(int);
-void time2string( char *, int );
+
+void gameInit(void);
+
+void gameWork(void);
+
+void countdown(void);
+
+void display_clear_strings(void);
+
+void moveBird(int x, int y);
+
+void movePipes();
+
+void time2string(char *, int);
+
+
 /* Written as part of i/o lab: getbtns, getsw, enable_interrupt */
 int getbtns(void);
+
 int getsw(void);
+
 void enable_interrupt(void);
