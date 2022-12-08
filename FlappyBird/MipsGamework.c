@@ -23,6 +23,7 @@ int bird_x = start_X;
 int bird_y = start_Y;
 int gameState = 0;
 int gameTick = 0;
+bool buttonReleasedSinceLastPress = true;
 
 char textstring[] = "text, more text, and even more text!";
 
@@ -92,16 +93,29 @@ void gameWork(void) {
             if (gameTick % 5 == 0) {
                 bird_y += gravity; // Gravity, positive since the Y-axis is inverted
             }
-            switch (getbtns()) {
-                case 4: // BTN4
-                    bird_y -= 2; // Jump
-                case 3: // BTN3
-                    bird_x -= 1; // Move left
-                case 2: // BTN2
-                    bird_x += 1; // Move right
-                default: // No button input
-                    break;
+
+            // Check if a new input is allowed
+            if (!buttonIsPushed()) {
+                buttonReleasedSinceLastPress = true;
             }
+
+            if (buttonReleasedSinceLastPress) {
+                switch (getbtns()) {
+                    case 4: // BTN4
+                        bird_y -= 2; // Jump
+                        buttonReleasedSinceLastPress = false;
+                    case 3: // BTN3
+                        bird_x -= 1; // Move left
+                        buttonReleasedSinceLastPress = false;
+                    case 2: // BTN2
+                        bird_x += 1; // Move right
+                        buttonReleasedSinceLastPress = false;
+                    default: // No button input
+                        break;
+                }
+            }
+
+            checkIfOutOfBounds();
 
             drawBird(bird_x, bird_y);
 

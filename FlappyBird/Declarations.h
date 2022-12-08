@@ -67,6 +67,8 @@ void delay(int);
 
 void gameInit(void);
 
+void checkIfOutOfBounds();
+
 void gameWork(void);
 
 void countdown(void);
