@@ -291,6 +291,22 @@ void display_update(void) {
     }
 }
 
+// If the bird is out of bounds, move it back to the screen
+void checkIfOutOfBounds() {
+    if (bird_x < 0) {
+        bird_x = 2;
+    }
+    if (bird_x >= 128) {
+        bird_x = 126;
+    }
+    if (bird_y < 0) {
+        bird_y = 2;
+    }
+    if (bird_y >= 32) {
+        bird_y = 29;
+    }
+}
+
 /* Helper function, local to this file.
    Converts a number to hexadecimal ASCII digits. */
 static void num32asc(char *s, int n) {
