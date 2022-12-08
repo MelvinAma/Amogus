@@ -9,7 +9,6 @@
 #include "Declarations.h"  /* Declatations for these labs */
 
 char textbuffer[4][16];
-int gameState = 0;
 
 const uint8_t const font[] = {
         0, 0, 0, 0, 0, 0, 0, 0,
@@ -153,7 +152,7 @@ const uint8_t const icon[] = {
         0x00, 0x00, 0x00, 0xe3, 0xe3, 0xe3, 0xe3, 0xe3, 0xe3, 0xe3, 0xe3, 0xe3, 0xfc, 0xfc, 0xff, 0xff
 };
 
-const uint8_t const canvas[] = {
+uint8_t canvas[] = {
         255, 255, 255, 255, 255, 255, 255, 255,
         255, 255, 255, 255, 255, 255, 255, 255,
         255, 255, 255, 255, 255, 255, 255, 255,

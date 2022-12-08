@@ -7,6 +7,7 @@
 #include <stdint.h>   /* Declarations of uint_32 and the like */
 #include "pic32mx.h"  /* Declarations of system-specific addresses etc */
 #include "Declarations.h"  /* Declatations for these labs */
+#include <stdbool.h>
 // #include <IOShieldOled.h>
 
 /* Declare a helper function which is local to this file */
@@ -158,8 +159,6 @@ void countdown(void) {
     display_string(2, "   GO!");
     display_update();
     delay(1000);
-
-    gameState = 1;
 }
 
 void display_string(int line, char *s) {
@@ -177,15 +176,75 @@ void display_string(int line, char *s) {
             textbuffer[line][i] = ' ';
 }
 
-// Makes changes to canvas[] to "mark" pixels on the screen
-// to display the bird's movement
-void moveBird(int x, int y) {
+bool buttonIsPushed() {
+    if (getbtns() >= 1 && getbtns() <= 4) {
+        return 1;
+    }
+    return 0;
+}
 
+// Remove all markings from the canvas
+void resetCanvas() {
+    int i;
+    for (i = 0; i < 512; ++i) {
+        canvas[i] = 255;
+    }
+}
+
+// Makes changes to canvas[] to light pixels on the screen
+void lightPixel(int x, int y) {
+    // Check if x and y are out of bounds for the screen
+    if (y < 0 || x < 0 || x > 127 || y > 32) {
+        x = -1;
+        y = -1;
+    }
+
+    // Adjust x and y based on the "block" of the screen they are in
+    int blocks[] = {8, 16, 24};
+    int i;
+    for (i = 0; i < 3; i++) {
+        if (y >= blocks[i] && y < blocks[i] + 8) {
+            y = y - blocks[i];
+            x = x + 128 * (i + 1);
+            if (x < 128 * (i + 1) || x > 128 * (i + 2)) {
+                x = -1;
+            }
+        }
+    }
+
+    // Perform a bit manipulation operation on canvas[x] based on y
+    if (y == 0) {
+        int write = ~1;
+        canvas[x] = canvas[x] & write;
+    } else {
+        int k = 1;
+        int l;
+        for (l = 1; l < 8; l++) {
+            k *= 2;
+            if (y == l) {
+                int write = ~k;
+                canvas[x] = canvas[x] & write;
+            }
+        }
+    }
+}
+
+// The bird is represented as a 2x2 square
+// The coordinates use the top-left pixel as (x,y)
+void drawBird(int x, int y) {
+    lightPixel(x, y);               // Top-left
+    lightPixel(x + 1, y);        // Top-right
+    lightPixel(x, y + 1);        // Bottom-left
+    lightPixel(x + 1, y + 1); // Bottom-right
 }
 
 // Makes changes to canvas[] to "mark" pixels on the screen
 // to display the pipe's movement
 void movePipes() {
+
+}
+
+bool collision() {
 
 }
 
@@ -203,8 +262,8 @@ void display_image(int x, const uint8_t *data) {
 
         DISPLAY_CHANGE_TO_DATA_MODE;
 
-        for (j = 0; j < 32; j++)
-            spi_send_recv(~data[i * 32 + j]);
+        for (j = 0; j < 32 * 4; j++)
+            spi_send_recv(~data[i * 32 * 4 + j]);
     }
 }
 

@@ -14,7 +14,15 @@
 #include "pic32mx.h"  /* Declarations of system-specific addresses etc */
 #include "Declarations.h" /* Declatations for these labs */
 
+#define gravity 1
+#define start_X 20
+#define start_Y 10
+
 int mytime = 0x5957;
+int bird_x = start_X;
+int bird_y = start_Y;
+int gameState = 0;
+int gameTick = 0;
 
 char textstring[] = "text, more text, and even more text!";
 
@@ -29,14 +37,15 @@ void user_isr(void) {
 void gameInit(void) {
     display_init();
     display_clear_strings();
+    gameState = 0;
 }
 
 /* This function is called repetitively from the main program */
 // Game states: 0 = start menu, 1 = game, 2 = end screen
 void gameWork(void) {
 
-    // Clear string
-    display_clear_strings();
+    // TODO: Clear display
+    //display_clear_strings();
 
     // Start menu
     if (gameState == 0) {
@@ -45,43 +54,69 @@ void gameWork(void) {
             display_string(1, "Press any");
             display_string(2, "button to");
             display_string(3, "continue");
-
             display_update();
+
             display_image(96, icon);
 
             delay(5);
 
             // Check if a button is pressed to start the game
-            // TODO: fix not registering BTN1
-            if (getbtns() >= 1 && getbtns() <= 4) {
+            if (buttonIsPushed()) {
                 countdown();
+                gameState = 1;
             }
         }
     }
 
     // Game is live
     if (gameState == 1) {
-        y += 1; // Gravity, positive since the Y-axis is inverted
+        while (gameState == 1) {
+            gameTick++;
 
-        // FOR TESTING:
-        // turning on the left-most switch resets the game
-        if (getsw() == 8) {
-            gameState = 0;
-            // To not register multiple key presses, which would lead to gameState == 0 being skipped
-            delay(2000);
-        }
-        //moveBird(x, y); TODO
+            // Clean canvas before drawing next frame
+            resetCanvas();
 
-        if (getbtns() == 4) {
-            y -= 2;
+            int i;
+            for (i = 0; i < 128; ++i) {
+                lightPixel(i, 0);
+                lightPixel(i, 31);
+            }
+
+            // turning on the left-most switch resets the game
+            if (getsw() == 8) {
+                gameState = 0;
+                // Short delay to not register multiple key presses, which can lead to gameState == 0 being skipped
+                delay(1000);
+            }
+
+            if (gameTick % 5 == 0) {
+                bird_y += gravity; // Gravity, positive since the Y-axis is inverted
+            }
+            switch (getbtns()) {
+                case 4: // BTN4
+                    bird_y -= 2; // Jump
+                case 3: // BTN3
+                    bird_x -= 1; // Move left
+                case 2: // BTN2
+                    bird_x += 1; // Move right
+                default: // No button input
+                    break;
+            }
+
+            drawBird(bird_x, bird_y);
+
+            display_image(0, canvas);
+
+//        if (collision()) {  // Game over
+//            gameState = 2;
+//        }
         }
     }
 
     // End screen / game over
     if (gameState == 2) {
-    }
 
-    moveBird(x, y);
-    //movePipes();
-    display_image(0, canvas);
+    }
 }
+
+

@@ -4,6 +4,7 @@
 #include "Declarations.h"  /* Declatations for these labs */
 #include <stdbool.h>
 #include <stdlib.h>
+
 int getsw(void) {
 
     int sw = (PORTD >> 8) & 0xF;

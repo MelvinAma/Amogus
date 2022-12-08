@@ -8,6 +8,8 @@
    For copyright and licensing, see file COPYING */
 
 /* Declare display-related functions from mipslabfunc.c */
+#include <stdbool.h>
+
 void display_image(int x, const uint8_t *data);
 
 void display_init(void);
@@ -19,8 +21,8 @@ void display_update(void);
 uint8_t spi_send_recv(uint8_t data);
 
 extern gameState;
-int x;
-int y;
+extern bird_x;
+extern bird_y;
 
 /* Declare lab-related functions from mipslabfunc.c */
 char *itoaconv(int num);
@@ -52,7 +54,7 @@ extern const uint8_t const font[128 * 8];
 /* Declare bitmap array containing icon */
 extern const uint8_t const icon[128];
 /* Declare bitmap array containing the canvas */
-extern const uint8_t const canvas[128 * 4]; // 128*4 since 4*8=36, which is the display's height
+extern uint8_t canvas[128 * 4]; // 128*4 since 4*8=36, which is the display's height
 /* Declare text buffer for display output */
 extern char textbuffer[4][16];
 
@@ -71,7 +73,14 @@ void countdown(void);
 
 void display_clear_strings(void);
 
-void moveBird(int x, int y);
+void drawBird(int x, int y);
+
+void lightPixel(int x, int y);
+
+bool collision();
+
+void resetCanvas();
+
 
 void movePipes();
 
@@ -82,5 +91,7 @@ void time2string(char *, int);
 int getbtns(void);
 
 int getsw(void);
+
+bool buttonIsPushed();
 
 void enable_interrupt(void);
