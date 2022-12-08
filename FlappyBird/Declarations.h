@@ -20,6 +20,25 @@ void display_update(void);
 
 uint8_t spi_send_recv(uint8_t data);
 
+typedef struct {
+   int x;
+   int y;
+} Bird;
+
+typedef struct {
+  int x;
+  int y;
+  int width;
+  int height;
+  int speed;
+  int gapSize;
+  int gapHeight;
+} Pipe;
+
+extern NUM_PIPES;
+extern Pipe pipes[];
+extern Bird bird;
+extern NUM_PIPES;
 extern gameState;
 extern bird_x;
 extern bird_y;
@@ -73,7 +92,11 @@ void countdown(void);
 
 void display_clear_strings(void);
 
-void drawBird(int x, int y);
+void drawBird(Bird* bird);
+
+void drawPipe(Pipe* pipe);
+
+void drawPipes();
 
 void lightPixel(int x, int y);
 

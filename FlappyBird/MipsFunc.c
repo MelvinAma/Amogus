@@ -231,21 +231,93 @@ void lightPixel(int x, int y) {
 
 // The bird is represented as a 2x2 square
 // The coordinates use the top-left pixel as (x,y)
-void drawBird(int x, int y) {
-    lightPixel(x, y);               // Top-left
-    lightPixel(x + 1, y);        // Top-right
-    lightPixel(x, y + 1);        // Bottom-left
-    lightPixel(x + 1, y + 1); // Bottom-right
+void drawBird(Bird* bird) {
+    int i;
+    int j;
+    for (i = 0; i < 3; i++) {
+        for (j = 0; j < 3; j++) {
+            lightPixel(bird->x + i, bird->y + j);
+        }
+    }
 }
 
+#define PIPE_SPEED 5
+
+void drawPipe(Pipe* pipe) {
+  // Use the drawPixel function to draw each pixel of the pipe
+  int i, j;
+  for (i = 0; i < pipe->width; i++) {
+    for (j = 0; j < pipe->height; j++) {
+      // Check the value of the pipeImage array to decide whether to draw the pixel
+      int index = j * pipe->width + i;
+        lightPixel(pipe->x + i, pipe->y + j);
+      
+    }
+  }
+}
+
+void drawPipes() {
+    int i;
+    for (i = 0; i < 8; i++) {
+    drawPipe(&pipes[i]);
+  }
+}
 // Makes changes to canvas[] to "mark" pixels on the screen
 // to display the pipe's movement
-void movePipes() {
+void movePipe(Pipe* pipe) {
+  // Update the pipe's position
+  pipe->x -= 1;
 
+  if (pipe->x < 0) {
+      pipe->x = 128;
+  }
+}
+
+void movePipes() {
+    int i;
+    for (i = 0; i < 8; i++) {
+    movePipe(&pipes[i]);
+  }
+}
+
+bool checkIfOutOfBounds() {
+    if (bird.x < 0 || bird.x >= 128 || bird.y < 0 || bird.y >= 32) {
+        return true;
+    }
 }
 
 bool collision() {
+// Check for collisions with the pipes
+    
 
+
+    int i;
+    for (i = 0; i < 8; i += 2) {
+        // Get the coordinates and sizes of the top and bottom pipes
+        Pipe topPipe = pipes[i];
+        Pipe bottomPipe = pipes[i + 1];
+
+        // Calculate the edges of the top and bottom pipes
+        int topPipeLeft = topPipe.x;
+        int topPipeRight = topPipe.x + topPipe.width;
+        int topPipeTop = topPipe.y;
+        int topPipeBottom = topPipe.y + topPipe.height;
+
+        int bottomPipeLeft = bottomPipe.x;
+        int bottomPipeRight = bottomPipe.x + bottomPipe.width;
+        int bottomPipeTop = bottomPipe.y;
+        int bottomPipeBottom = bottomPipe.y + bottomPipe.height;
+
+        // Check if the bird collides with the top or bottom pipe
+        if ((bird.x + 2 >= topPipeLeft && bird.x <= topPipeRight &&
+             bird.y + 2 >= topPipeTop && bird.y <= topPipeBottom)) {
+            return 1;
+        }
+        if ((bird.x + 2 >= bottomPipeLeft && bird.x <= bottomPipeRight &&
+             bird.y + 2 >= bottomPipeTop && bird.y <= bottomPipeBottom)) {
+            return 1;
+        }
+    }
 }
 
 void display_image(int x, const uint8_t *data) {

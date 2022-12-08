@@ -13,9 +13,9 @@ int getsw(void) {
 }
 
 int getbtns(void) {
+  // Read the values of the three buttons
+  int btn = (PORTD >> 5) & 0x7;
 
-    int btn = (PORTD >> 5) & 0x7;
-
-    return btn;
+  return btn;
 }
 
