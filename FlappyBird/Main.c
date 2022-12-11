@@ -14,10 +14,6 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-#define INT2POINTER(a) ((char*)(intptr_t)(a))
-#define POINTER2INT(a) ((int)(intptr_t)(a))
-
-
 int main(void) {
     /*
   This will set the peripheral bus clock to the same frequency

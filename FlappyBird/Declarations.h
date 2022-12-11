@@ -23,6 +23,8 @@ uint8_t spi_send_recv(uint8_t data);
 typedef struct {
     int x;
     int y;
+    int width;
+    int height;
 } Bird;
 
 typedef struct {
@@ -30,8 +32,6 @@ typedef struct {
     int y;
     int width;
     int height;
-    int gapSize;
-    int gapHeight;
 } Pipe;
 
 extern Pipe pipes[];
@@ -110,15 +110,18 @@ void combineStrings();
 
 void time2string(char *, int);
 
-void adjustedQuicksort(int *scoreArray, char *playerArray[2], int left, int right);
-
 void displayHighScores();
 
+void quicksort(int arr[], int low, int high);
+
+void initPipes();
 
 /* Written as part of i/o lab: getbtns, getsw, enable_interrupt */
 int getbtns(void);
 
 int getsw(void);
+
+int numPipes;
 
 int gameState;
 
@@ -126,7 +129,7 @@ char initialString[2];
 
 int score;
 
-char *topPlayers[3];
+char topPlayers[6];
 
 int gameTick;
 

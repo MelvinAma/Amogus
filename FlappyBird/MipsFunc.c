@@ -9,7 +9,8 @@
 #include "Declarations.h"  /* Declatations for these labs */
 #include <stdbool.h>
 #include <string.h>
-#include "stdlib.h"
+#include <stdlib.h>
+#include <math.h>
 #include <stdio.h>
 
 /* Declare a helper function which is local to this file */
@@ -246,8 +247,8 @@ void lightPixel(int x, int y) {
 void drawBird(Bird *bird) {
     int i;
     int j;
-    for (i = 0; i < 3; i++) {
-        for (j = 0; j < 3; j++) {
+    for (i = 0; i < bird->height; i++) {
+        for (j = 0; j < bird->width; j++) {
             lightPixel(bird->x + i, bird->y + j);
         }
     }
@@ -275,6 +276,27 @@ void drawPipes() {
     }
 }
 
+void initPipes() {
+    int i;
+    for (i = 0; i < numPipes; i += 2) {
+        // Initialize the values of the top Pipe struct
+        pipes[i] = (Pipe) {
+                .x = i * 16 + 64,
+                .y = 0,
+                .width = 8,
+                .height = 8,
+        };
+
+        // Initialize the values of the bottom Pipe struct
+        pipes[i + 1] = (Pipe) {
+                .x = i * 16 + 64,
+                .y = (32 / 2) + 8,
+                .width = 8,
+                .height = (32 / 2) - 8,
+        };
+    }
+}
+
 // Makes changes to canvas[] to "mark" pixels on the screen
 // to display the pipe's movement
 void movePipe(Pipe *pipe, int pipeIndex) {
@@ -288,7 +310,7 @@ void movePipe(Pipe *pipe, int pipeIndex) {
             // Upper pipe
             pipe->x = pipe[furthestPipeIndex].x + 64 - score;
             pipe->y = 0;
-            pipe->width = 4;
+            pipe->width = 8;
             pipe->height = (32 / 2) - pipeGap;
 
             furthestPipeIndex = pipeIndex;
@@ -296,7 +318,7 @@ void movePipe(Pipe *pipe, int pipeIndex) {
             // Lower pipe
             pipe->x = pipe[furthestPipeIndex].x + 64 - score;
             pipe->y = (32 / 2) + pipeGap;
-            pipe->width = 4;
+            pipe->width = 8;
             pipe->height = 32 - pipe->y;
         }
         pipeNumber++;
@@ -332,35 +354,20 @@ void handleOutOfBounds() {
     }
 }
 
+// Bounding box collision detection
+// Reference: https://gamedev.stackexchange.com/questions/586/what-is-the-fastest-way-to-work-out-2d-bounding-box-intersection
 bool collision() {
-    // Check for collisions with the pipes
+    // The bounding box around the bird is a 2x2 square centered at (birdX, birdY)
     int i;
-    for (i = 0; i < 8; i += 2) {
-        // Get the coordinates and sizes of the top and bottom pipes
-        Pipe topPipe = pipes[i];
-        Pipe bottomPipe = pipes[i + 1];
-
-        // Calculate the edges of the top and bottom pipes
-        int topPipeLeft = topPipe.x;
-        int topPipeRight = topPipe.x + topPipe.width;
-        int topPipeTop = topPipe.y;
-        int topPipeBottom = topPipe.y + topPipe.height;
-
-        int bottomPipeLeft = bottomPipe.x;
-        int bottomPipeRight = bottomPipe.x + bottomPipe.width;
-        int bottomPipeTop = bottomPipe.y;
-        int bottomPipeBottom = bottomPipe.y + bottomPipe.height;
-
-        // Check if the bird collides with the top or bottom pipe
-        if ((bird.x + 2 >= topPipeLeft && bird.x <= topPipeRight &&
-             bird.y + 2 >= topPipeTop && bird.y <= topPipeBottom)) {
-            return 1;
-        }
-        if ((bird.x + 2 >= bottomPipeLeft && bird.x <= bottomPipeRight &&
-             bird.y + 2 >= bottomPipeTop && bird.y <= bottomPipeBottom)) {
+    for (i = 0; i < numPipes; ++i) {
+        if ((fabs((bird.x + bird.width / 2) - (pipes[i].x + pipes[i].width / 2)) * 2 <
+             (bird.width + pipes[i].width)) &&
+            (fabs((bird.y + bird.height / 2) - (pipes[i].y + pipes[i].height / 2)) * 2 <
+             (bird.height + pipes[i].height))) {
             return 1;
         }
     }
+    return 0;
 }
 
 void resetGame() {
@@ -372,43 +379,44 @@ void resetGame() {
     resetCanvas();
 }
 
-// Sorts in ascending order
-void adjustedQuicksort(int *scoreArray, char *playerArray[], int left, int right) {
-    //char *ptr = *topPlayers;
-    int i, j, pivot, temp;
-    char *tempC;
+void swapInt(int *a, int *b) {
+    int temp = *a;
+    *a = *b;
+    *b = temp;
+}
 
-    if (left < right) {
-        i = left;
-        j = right;
-        pivot = scoreArray[(left + right) / 2];
+// Names stored in pairs of chars (0-1,2-3,4-5)
+void swapPlayers(int a, int b) {
+    char temp = topPlayers[a * 2 + 1];
+    topPlayers[a * 2 + 1] = topPlayers[b * 2 + 1];
+    topPlayers[b * 2 + 1] = temp;
 
-        // partition the scoreArray into two subarrays
-        while (i <= j) {
-            while (scoreArray[i] < pivot) {
+    temp = topPlayers[a * 2];
+    topPlayers[a * 2] = topPlayers[b * 2];
+    topPlayers[b * 2] = temp;
+}
+
+void quicksort(int arr[], int low, int high) {
+    if (low < high) {
+        // Choose pivot and partition the array
+        int pivot = arr[high];
+        int i = low - 1;
+        int j;
+        for (j = low; j < high; j++) {
+            if (arr[j] <= pivot) {
                 i++;
-            }
-            while (scoreArray[j] > pivot) {
-                j--;
-            }
-            if (i <= j) {
-                temp = scoreArray[i];
-                scoreArray[i] = scoreArray[j];
-                scoreArray[j] = temp;
-
-                // The adjustment, also update topPlayers:
-                tempC = playerArray[i];
-                playerArray[i] = playerArray[j];
-                playerArray[j] = tempC;
-
-                i++;
-                j--;
+                swapInt(&arr[i], &arr[j]);
+                swapPlayers(i, j);
             }
         }
+        swapInt(&arr[i + 1], &arr[high]);
+        swapPlayers(i + 1, high);
 
-        // recursively sort the subarrays
-        adjustedQuicksort(scoreArray, playerArray, left, j);
-        adjustedQuicksort(scoreArray, playerArray, i, right);
+        int pivotIndex = i + 1;
+
+        // Recursively sort the subarrays
+        quicksort(arr, low, pivotIndex - 1);
+        quicksort(arr, pivotIndex + 1, high);
     }
 }
 
@@ -420,7 +428,7 @@ void displayHighScores() {
     int line = 1;
     int index;
     for (index = 2; index >= 0; --index) {
-        char str1[20] = {topPlayers[index][0], topPlayers[index][1], ' '};
+        char str1[20] = {topPlayers[index * 2], topPlayers[index * 2 + 1], ' '};
         char str2[20];
         int i;
         int j;

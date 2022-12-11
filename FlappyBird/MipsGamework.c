@@ -17,25 +17,26 @@
 #define start_X 5
 #define start_Y 5
 
-#define NUM_PIPES 16
-
 int mytime = 0x5957;
 int gameState = 0;
 int gameTick = 0;
 char alphabet[27];
 char initials[] = {'A', 'A'};
-char *topPlayers[] = {"  ", "  ", "  "};
+char topPlayers[] = {' ', ' ', ' ', ' ', ' ', ' '};
 int topScores[] = {0, 0, 0};
-int score = 0;
 char initialString[2] = {'A', 'A'};
+int score = 0;
+int numPipes = 16;
 
 bool pressed = false;
 
-Pipe pipes[NUM_PIPES];
+Pipe pipes[16];
 
 Bird bird = {
         .x = start_X,
-        .y = start_Y
+        .y = start_Y,
+        .width = 2,
+        .height = 2
 };
 
 char textstring[] = "text, more text, and even more text!";
@@ -87,25 +88,8 @@ void gameWork(void) {
 
     // Game is live
     if (gameState == 1) {
-        int i;
-        for (i = 0; i < NUM_PIPES; i += 2) {
-            // Initialize the values of the top Pipe struct
-            pipes[i] = (Pipe) {
-                    .x = i * 16 + 64,
-                    .y = 0,
-                    .width = 8,
-                    .height = 1,
-            };
 
-            // Initialize the values of the bottom Pipe struct
-            pipes[i + 1] = (Pipe) {
-                    .x = i * 16 + 64,
-                    .y = (32 / 2) + 8,
-                    .width = 8,
-                    .height = (32 / 2) - 8,
-            };
-        }
-
+        initPipes();
 
         // Freeze-frame for the first second of round start
         resetCanvas();
@@ -146,6 +130,7 @@ void gameWork(void) {
             if (gameTick % 5 == 0) {
                 bird.y += gravity; // Gravity, positive since the Y-axis is inverted
                 movePipes();
+                display_image(0, canvas);
             }
 
             int btn = getbtns();
@@ -170,7 +155,7 @@ void gameWork(void) {
             }
 
             int l;
-            for (l = 0; l < NUM_PIPES; l += 2) {
+            for (l = 0; l < numPipes; l += 2) {
                 // Increase score everytime the bird passes a pipe
                 if (bird.x == pipes[l].x + pipes[l].width) {
                     score++;
@@ -243,27 +228,21 @@ void gameWork(void) {
                     // No button is pressed
                     pressed = false;
                 }
-
-                initialString[0] = initials[0];
-                initialString[1] = initials[1];
-                display_string(3, initialString);
+                display_string(3, initials);
                 display_update();
             }
-
             // Replace the third score and then sort the scores
-            initialString[0] = initials[0];
-            initialString[1] = initials[1];
-            adjustedQuicksort(topScores, topPlayers, 0, 2);
-            topPlayers[0] = initialString;
+            topPlayers[0] = initials[0];
+            topPlayers[1] = initials[1];
             topScores[0] = score;
-            adjustedQuicksort(topScores, topPlayers, 0, 2);
+            quicksort(topScores, 0, 2);
         } else {
             display_clear_strings();
             display_string(0, "You did not");
             display_string(1, "make it into");
             display_string(2, "the top 3 :(");
             display_update();
-            delay(5000);
+            delay(2000);
         }
 
         displayHighScores();
