@@ -8,7 +8,9 @@
 #include "pic32mx.h"  /* Declarations of system-specific addresses etc */
 #include "Declarations.h"  /* Declatations for these labs */
 #include <stdbool.h>
-// #include <IOShieldOled.h>
+#include <string.h>
+#include "stdlib.h"
+#include <stdio.h>
 
 /* Declare a helper function which is local to this file */
 static void num32asc(char *s, int);
@@ -22,8 +24,18 @@ static void num32asc(char *s, int);
 #define DISPLAY_ACTIVATE_VDD (PORTFCLR = 0x40)
 #define DISPLAY_ACTIVATE_VBAT (PORTFCLR = 0x20)
 
+#define gravity 1
+#define start_X 5
+#define start_Y 5
+#define defaultPipeHeight 8
+#define defaultPipeGap 9
+
 #define DISPLAY_TURN_OFF_VDD (PORTFSET = 0x40)
 #define DISPLAY_TURN_OFF_VBAT (PORTFSET = 0x20)
+
+int pipeGap = defaultPipeGap;
+int pipeNumber = 0;
+int furthestPipeIndex = 16;
 
 /* quicksleep:
    A simple function to create a small delay.
@@ -140,8 +152,8 @@ void countdown(void) {
 
     display_string(0, "BTN4: jump");
     display_string(1, "BTN3: move left");
-    display_string(2, "BTN2: Move right");
-    display_string(3, "SW4 : Reset game");
+    display_string(2, "BTN2: move right");
+    display_string(3, "SW4 : reset game");
 
     display_update();
     delay(3000);
@@ -231,7 +243,7 @@ void lightPixel(int x, int y) {
 
 // The bird is represented as a 2x2 square
 // The coordinates use the top-left pixel as (x,y)
-void drawBird(Bird* bird) {
+void drawBird(Bird *bird) {
     int i;
     int j;
     for (i = 0; i < 3; i++) {
@@ -243,54 +255,85 @@ void drawBird(Bird* bird) {
 
 #define PIPE_SPEED 5
 
-void drawPipe(Pipe* pipe) {
-  // Use the drawPixel function to draw each pixel of the pipe
-  int i, j;
-  for (i = 0; i < pipe->width; i++) {
-    for (j = 0; j < pipe->height; j++) {
-      // Check the value of the pipeImage array to decide whether to draw the pixel
-      int index = j * pipe->width + i;
-        lightPixel(pipe->x + i, pipe->y + j);
-      
+void drawPipe(Pipe *pipe) {
+    // Use the drawPixel function to draw each pixel of the pipe
+    int i, j;
+    for (i = 0; i < pipe->width; i++) {
+        for (j = 0; j < pipe->height; j++) {
+            // Check the value of the pipeImage array to decide whether to draw the pixel
+            int index = j * pipe->width + i;
+            lightPixel(pipe->x + i, pipe->y + j);
+
+        }
     }
-  }
 }
 
 void drawPipes() {
     int i;
     for (i = 0; i < 8; i++) {
-    drawPipe(&pipes[i]);
-  }
+        drawPipe(&pipes[i]);
+    }
 }
+
 // Makes changes to canvas[] to "mark" pixels on the screen
 // to display the pipe's movement
-void movePipe(Pipe* pipe) {
-  // Update the pipe's position
-  pipe->x -= 1;
+void movePipe(Pipe *pipe, int pipeIndex) {
+    // Update the pipe's position
+    pipe->x -= 1;
+    pipeGap = defaultPipeGap + (gameTick % 3); // "random"
 
-  if (pipe->x < 0) {
-      pipe->x = 128;
-  }
+    // Coordinate weirdness
+    if (pipe->x < 0 - pipe->width) {
+        if (pipeNumber % 2 == 0) {
+            // Upper pipe
+            pipe->x = pipe[furthestPipeIndex].x + 64 - score;
+            pipe->y = 0;
+            pipe->width = 4;
+            pipe->height = (32 / 2) - pipeGap;
+
+            furthestPipeIndex = pipeIndex;
+        } else {
+            // Lower pipe
+            pipe->x = pipe[furthestPipeIndex].x + 64 - score;
+            pipe->y = (32 / 2) + pipeGap;
+            pipe->width = 4;
+            pipe->height = 32 - pipe->y;
+        }
+        pipeNumber++;
+    }
 }
 
 void movePipes() {
     int i;
-    for (i = 0; i < 8; i++) {
-    movePipe(&pipes[i]);
-  }
+    for (i = 0; i < 16; i++) {
+        movePipe(&pipes[i], i);
+    }
 }
 
-bool checkIfOutOfBounds() {
+bool outOfBounds() {
     if (bird.x < 0 || bird.x >= 128 || bird.y < 0 || bird.y >= 32) {
         return true;
     }
 }
 
+// If the bird is out of bounds, move it back to the screen
+void handleOutOfBounds() {
+    if (bird.x < 0) {
+        bird.x = 2;
+    }
+    if (bird.x >= 128) {
+        bird.x = 126;
+    }
+    if (bird.y < 0) {
+        bird.y = 2;
+    }
+    if (bird.y >= 32) {
+        bird.y = 29;
+    }
+}
+
 bool collision() {
-// Check for collisions with the pipes
-    
-
-
+    // Check for collisions with the pipes
     int i;
     for (i = 0; i < 8; i += 2) {
         // Get the coordinates and sizes of the top and bottom pipes
@@ -317,6 +360,91 @@ bool collision() {
              bird.y + 2 >= bottomPipeTop && bird.y <= bottomPipeBottom)) {
             return 1;
         }
+    }
+}
+
+void resetGame() {
+    bird.x = start_X;
+    bird.y = start_Y;
+    initials[0] = 'A';
+    initials[1] = 'A';
+    score = 0;
+    resetCanvas();
+}
+
+// Sorts in ascending order
+void adjustedQuicksort(int *scoreArray, char *playerArray[], int left, int right) {
+    //char *ptr = *topPlayers;
+    int i, j, pivot, temp;
+    char *tempC;
+
+    if (left < right) {
+        i = left;
+        j = right;
+        pivot = scoreArray[(left + right) / 2];
+
+        // partition the scoreArray into two subarrays
+        while (i <= j) {
+            while (scoreArray[i] < pivot) {
+                i++;
+            }
+            while (scoreArray[j] > pivot) {
+                j--;
+            }
+            if (i <= j) {
+                temp = scoreArray[i];
+                scoreArray[i] = scoreArray[j];
+                scoreArray[j] = temp;
+
+                // The adjustment, also update topPlayers:
+                tempC = playerArray[i];
+                playerArray[i] = playerArray[j];
+                playerArray[j] = tempC;
+
+                i++;
+                j--;
+            }
+        }
+
+        // recursively sort the subarrays
+        adjustedQuicksort(scoreArray, playerArray, left, j);
+        adjustedQuicksort(scoreArray, playerArray, i, right);
+    }
+}
+
+// Utilizes the pre-implemented itoaconv function to
+// concatenate the initials with the score
+void displayHighScores() {
+    display_clear_strings();
+    display_string(0, "HIGH SCORES:");
+    int line = 1;
+    int index;
+    for (index = 2; index >= 0; --index) {
+        char str1[20] = {topPlayers[index][0], topPlayers[index][1], ' '};
+        char str2[20];
+        int i;
+        int j;
+
+        // call itoaconv to convert topScores[2] to a string and store the result in str2
+        char *itoaResult = itoaconv(topScores[index]);
+        for (i = 0; itoaResult[i] != '\0'; i++) {
+            str2[i] = itoaResult[i];
+        }
+        str2[i] = '\0';
+        // concatenate str1 and str2 and store the result in str1
+        for (i = 0; str1[i] != '\0'; i++) {
+            // do nothing
+        }
+        for (j = 0; str2[j] != '\0'; j++) {
+            str1[i + j] = str2[j];
+        }
+        str1[i + j] = '\0';
+
+        // Only display if a score is saved for the position
+        if (topScores[index] != 0) {
+            display_string(line, str1);
+        }
+        line++;
     }
 }
 

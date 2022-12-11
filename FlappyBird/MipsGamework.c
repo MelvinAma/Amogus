@@ -3,36 +3,39 @@
    This file written 2015 by F Lundevall
    Updated 2017-04-21 by F Lundevall
 
-   This file should be changed by YOU! So you must
-   add comment(s) here with your name(s) and date(s):
+   Modified by Ville Stenström and Melvin Amandusson
+   */
 
-   This file modified 2017-04-31 by Ture Teknolog 
-
-   For copyright and licensing, see file COPYING */
 
 #include <stdint.h>  /* Declarations of uint_32 and the like */
 #include "pic32mx.h"  /* Declarations of system-specific addresses etc */
 #include "Declarations.h" /* Declatations for these labs */
 #include <stdlib.h>
+#include <string.h>
 
 #define gravity 1
-#define start_X 20
-#define start_Y 10
+#define start_X 5
+#define start_Y 5
 
-#define NUM_PIPES 6
-#define PIPE_SPACING 32
+#define NUM_PIPES 16
 
 int mytime = 0x5957;
-int bird_x = start_X;
-int bird_y = start_Y;
 int gameState = 0;
 int gameTick = 0;
+char alphabet[27];
+char initials[] = {'A', 'A'};
+char *topPlayers[] = {"  ", "  ", "  "};
+int topScores[] = {0, 0, 0};
+int score = 0;
+char initialString[2] = {'A', 'A'};
 
-Pipe pipes[8];
+bool pressed = false;
+
+Pipe pipes[NUM_PIPES];
 
 Bird bird = {
-    .x = 5,
-    .y = 5
+        .x = start_X,
+        .y = start_Y
 };
 
 char textstring[] = "text, more text, and even more text!";
@@ -46,16 +49,20 @@ void user_isr(void) {
 
 /* Lab-specific initialization goes here */
 void gameInit(void) {
+    int i;
+    for (i = 0; i < 26; i++) {
+        alphabet[i] = 'A' + i;
+    }
+
     display_init();
     display_clear_strings();
-    gameState = 1;
+    gameState = 0;
 }
 /* This function is called repetitively from the main program */
 // Game states: 0 = start menu, 1 = game, 2 = end screen
 void gameWork(void) {
-
-    // TODO: Clear display
-    //display_clear_strings();
+    display_clear_strings();
+    resetCanvas();
 
     // Start menu
     if (gameState == 0) {
@@ -66,7 +73,7 @@ void gameWork(void) {
             display_string(3, "continue");
             display_update();
 
-            display_image(96, icon);
+            //display_image(96, icon);
 
             delay(5);
 
@@ -80,30 +87,41 @@ void gameWork(void) {
 
     // Game is live
     if (gameState == 1) {
-
         int i;
-        for (i = 0; i < 8; i += 2) {
-
+        for (i = 0; i < NUM_PIPES; i += 2) {
             // Initialize the values of the top Pipe struct
             pipes[i] = (Pipe) {
-                .x = i * 16 + 64,
-                .y = 0,
-                .width = 8,
-                .height = (32 / 2) - 8,
-                .speed = 5
+                    .x = i * 16 + 64,
+                    .y = 0,
+                    .width = 8,
+                    .height = 1,
             };
 
             // Initialize the values of the bottom Pipe struct
             pipes[i + 1] = (Pipe) {
-                .x = i * 16 + 64,
-                .y = (32 / 2) + 8,
-                .width = 8,
-                .height = (32 / 2) - 8,
-                .speed = 5
+                    .x = i * 16 + 64,
+                    .y = (32 / 2) + 8,
+                    .width = 8,
+                    .height = (32 / 2) - 8,
             };
         }
-        bool pressed = false;
 
+
+        // Freeze-frame for the first second of round start
+        resetCanvas();
+        int k;
+        for (k = 0; k < 128; ++k) {
+            lightPixel(k, 0);
+            lightPixel(k, 31);
+        }
+        drawBird(&bird);
+        movePipes();
+        drawPipes();
+        display_image(0, canvas);
+        delay(1000);
+
+        // MAIN GAME LOOP
+        // Loops until game over
         while (gameState == 1) {
             gameTick++;
 
@@ -111,14 +129,15 @@ void gameWork(void) {
             resetCanvas();
 
             // Light top- and bottom border
-            int i;
-            for (i = 0; i < 128; ++i) {
-                lightPixel(i, 0);
-                lightPixel(i, 31);
+            int j;
+            for (j = 0; j < 128; ++j) {
+                lightPixel(j, 0);
+                lightPixel(j, 31);
             }
 
             // turning on the left-most switch resets the game
             if (getsw() == 8) {
+                resetGame();
                 gameState = 0;
                 // Short delay to not register multiple key presses, which can lead to gameState == 0 being skipped
                 delay(1000);
@@ -128,53 +147,132 @@ void gameWork(void) {
                 bird.y += gravity; // Gravity, positive since the Y-axis is inverted
                 movePipes();
             }
+
             int btn = getbtns();
-  // Check the value of the getbtns function
+            // Check the value of the getbtns function
             if (btn == 0x4) {
+                // Left button is pressed
                 if (!pressed) {
                     bird.y -= 10;
                 }
                 pressed = true;
-                // Left button is pressed
-                // ...
             } else if (btn == 0x2 && !pressed) {
+                // Middle button is pressed
                 bird.x -= 1;
                 pressed = true;
-                // Middle button is pressed
-                // ...
             } else if (btn == 0x1 && !pressed) {
+                // Right button is pressed
                 bird.x += 1;
                 pressed = true;
-                // Right button is pressed
-                // ...
             } else {
-                pressed = false;
                 // No button is pressed
-                // ...
+                pressed = false;
+            }
+
+            int l;
+            for (l = 0; l < NUM_PIPES; l += 2) {
+                // Increase score everytime the bird passes a pipe
+                if (bird.x == pipes[l].x + pipes[l].width) {
+                    score++;
+                    break;
+                }
             }
 
             drawBird(&bird);
-
             drawPipes();
 
-// Initialize the values of the Pipe struct
-
-// Generate the pipes and add them to the array
-
- 
             display_image(0, canvas);
 
-        if (collision()) {  // Game over
-            gameState = 2;
-            break;
-        }
+            handleOutOfBounds();
+            gameTick++;
+
+            if (collision()) {  // Game over
+                gameState = 2;
+            }
         }
     }
 
     // End screen / game over
     if (gameState == 2) {
+
+        // Check if the score is enough to get into the top 3 list
+        // if true, allow player to enter their initials
+        if (score > topScores[0]) {
+            display_clear_strings();
+            display_string(0, "Final Score: ");
+            display_string(2, "Name:");
+
+            pressed = false;
+            int initialIndex = 0;
+            int i = 0;  // Alphabet index
+
+            // Allow user to set initials
+            // INPUTS:
+            // BTN4: step forward (e.g. A -> B, Z -> A)
+            // BTN3: step backwards (e.g. A <- B, Z <- A)
+            // BTN2: confirms the current initial, ends loop if pressed thrice
+            while (initialIndex < 2) {
+                int btn = getbtns();
+                if (btn == 0x4) {
+                    // Left button is pressed, step FORWARD in the alphabet
+                    if (!pressed) {
+                        i++;
+                        if (i >= 26) {   // Past Z, jump to A
+                            i = 0;
+                        }
+                        initials[initialIndex] = alphabet[i];
+                    }
+                    pressed = true;
+
+                } else if (btn == 0x2) {
+                    // Middle button is pressed, step BACKWARDS in the alphabet
+                    if (!pressed) {
+                        i--;
+                        if (i < 0) {    // Past A, jump to Z
+                            i = 25;
+                        }
+                        initials[initialIndex] = alphabet[i];
+                    }
+                    pressed = true;
+                } else if (btn == 0x1) {    // An initial has been confirmed
+                    if (!pressed) {
+                        initialIndex++;
+                    }
+                    pressed = true;
+                } else {
+                    // No button is pressed
+                    pressed = false;
+                }
+
+                initialString[0] = initials[0];
+                initialString[1] = initials[1];
+                display_string(3, initialString);
+                display_update();
+            }
+
+            // Replace the third score and then sort the scores
+            initialString[0] = initials[0];
+            initialString[1] = initials[1];
+            adjustedQuicksort(topScores, topPlayers, 0, 2);
+            topPlayers[0] = initialString;
+            topScores[0] = score;
+            adjustedQuicksort(topScores, topPlayers, 0, 2);
+        } else {
+            display_clear_strings();
+            display_string(0, "You did not");
+            display_string(1, "make it into");
+            display_string(2, "the top 3 :(");
+            display_update();
+            delay(5000);
+        }
+
+        displayHighScores();
+        display_update();
+
+        delay(2000);
+
+        resetGame();
         gameState = 1;
-        gameWork();
     }
 }
 

@@ -21,27 +21,21 @@ void display_update(void);
 uint8_t spi_send_recv(uint8_t data);
 
 typedef struct {
-   int x;
-   int y;
+    int x;
+    int y;
 } Bird;
 
 typedef struct {
-  int x;
-  int y;
-  int width;
-  int height;
-  int speed;
-  int gapSize;
-  int gapHeight;
+    int x;
+    int y;
+    int width;
+    int height;
+    int gapSize;
+    int gapHeight;
 } Pipe;
 
-extern NUM_PIPES;
 extern Pipe pipes[];
 extern Bird bird;
-extern NUM_PIPES;
-extern gameState;
-extern bird_x;
-extern bird_y;
 
 /* Declare lab-related functions from mipslabfunc.c */
 char *itoaconv(int num);
@@ -92,11 +86,15 @@ void countdown(void);
 
 void display_clear_strings(void);
 
-void drawBird(Bird* bird);
+void drawBird(Bird *bird);
 
-void drawPipe(Pipe* pipe);
+void drawPipe(Pipe *pipe);
 
 void drawPipes();
+
+bool outOfBounds();
+
+void handleOutOfBounds();
 
 void lightPixel(int x, int y);
 
@@ -104,16 +102,38 @@ bool collision();
 
 void resetCanvas();
 
+void resetGame();
 
 void movePipes();
 
+void combineStrings();
+
 void time2string(char *, int);
+
+void adjustedQuicksort(int *scoreArray, char *playerArray[2], int left, int right);
+
+void displayHighScores();
 
 
 /* Written as part of i/o lab: getbtns, getsw, enable_interrupt */
 int getbtns(void);
 
 int getsw(void);
+
+int gameState;
+
+char initialString[2];
+
+int score;
+
+char *topPlayers[3];
+
+int gameTick;
+
+char initials[2];
+
+int topScores[3];
+
 
 bool buttonIsPushed();
 
