@@ -172,6 +172,8 @@ void gameWork(void) {
             gameTick++;
 
             if (collision()) {  // Game over
+                drawDeathAnimation(&bird);
+                delay(1000);
                 gameState = 2;
             }
         }
