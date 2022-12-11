@@ -2,6 +2,9 @@
    This file written 2015 by F Lundevall
    Some parts are original code written by Axel Isaksson
 
+    Modified by Ville Stenström and Melvin Amandusson
+
+
    For copyright and licensing, see file COPYING */
 
 #include <stdint.h>   /* Declarations of uint_32 and the like */
@@ -31,12 +34,20 @@ static void num32asc(char *s, int);
 #define defaultPipeHeight 8
 #define defaultPipeGap 9
 
+// Constants used for generating pseudo-random numbers
+#define LCG_A 1664525
+#define LCG_C 1013904223
+#define LCG_M (1 << 31)
+
 #define DISPLAY_TURN_OFF_VDD (PORTFSET = 0x40)
 #define DISPLAY_TURN_OFF_VBAT (PORTFSET = 0x20)
 
 int pipeGap = defaultPipeGap;
 int pipeNumber = 0;
-int furthestPipeIndex = 16;
+int furthestPipeIndex = 12;
+
+// Global LCG state
+static unsigned long long lcg_state = 0;
 
 /* quicksleep:
    A simple function to create a small delay.
@@ -267,81 +278,86 @@ void drawBird(Bird *bird) {
     }
 }
 
-#define PIPE_SPEED 5
-
 void drawPipe(Pipe *pipe) {
     // Use the drawPixel function to draw each pixel of the pipe
     int i, j;
     for (i = 0; i < pipe->width; i++) {
         for (j = 0; j < pipe->height; j++) {
-            // Check the value of the pipeImage array to decide whether to draw the pixel
-            int index = j * pipe->width + i;
             lightPixel(pipe->x + i, pipe->y + j);
-
         }
     }
 }
 
 void drawPipes() {
     int i;
-    for (i = 0; i < 8; i++) {
+    for (i = 0; i < numPipes; i++) {
         drawPipe(&pipes[i]);
     }
 }
 
+// Set up the pipes
+// The BOTTOM pipe's values are inherited from the UPPER pipe
 void initPipes() {
     int i;
+    int random1;
+    int random2;
+
     for (i = 0; i < numPipes; i += 2) {
+        random1 = lcg_rand();// Pseudo-random for lower pipe
+        random2 = lcg_rand();// Pseudo-random for lower pipe
+
         // Initialize the values of the top Pipe struct
         pipes[i] = (Pipe) {
-                .x = i * 16 + 64,
+                .x = i * 22 + 64 - score,
                 .y = 0,
                 .width = 8,
-                .height = 8,
+                .height = 8 + (random1 % 3),
         };
 
         // Initialize the values of the bottom Pipe struct
         pipes[i + 1] = (Pipe) {
-                .x = i * 16 + 64,
-                .y = (32 / 2) + 8,
+                .x = pipes[i].x,
+                .y = 32 - (8 + (random2 % 3)),
                 .width = 8,
-                .height = (32 / 2) - 8,
+                .height = 34 - pipes[i + 1].y,
         };
     }
 }
 
+// Move all pipes one step to the left
+// If a pipe is moved outside of the screen, it is placed to the right of the screen again
+// The new position is based on the second-furthest pipe pair
+
 // Makes changes to canvas[] to "mark" pixels on the screen
 // to display the pipe's movement
-void movePipe(Pipe *pipe, int pipeIndex) {
-    // Update the pipe's position
-    pipe->x -= 1;
-    pipeGap = defaultPipeGap + (gameTick % 3); // "random"
-
-    // Coordinate weirdness
-    if (pipe->x < 0 - pipe->width) {
-        if (pipeNumber % 2 == 0) {
-            // Upper pipe
-            pipe->x = pipe[furthestPipeIndex].x + 64 - score;
-            pipe->y = 0;
-            pipe->width = 8;
-            pipe->height = (32 / 2) - pipeGap;
-
-            furthestPipeIndex = pipeIndex;
-        } else {
-            // Lower pipe
-            pipe->x = pipe[furthestPipeIndex].x + 64 - score;
-            pipe->y = (32 / 2) + pipeGap;
-            pipe->width = 8;
-            pipe->height = 32 - pipe->y;
-        }
-        pipeNumber++;
-    }
-}
-
 void movePipes() {
     int i;
-    for (i = 0; i < 16; i++) {
-        movePipe(&pipes[i], i);
+    for (i = 0; i < numPipes; i += 2) {
+        // Update the pipe's position
+        pipes[i].x -= 1;
+        pipes[i + 1].x -= 1;
+
+        int random1 = lcg_rand();    // Pseudo-random
+        int random2 = lcg_rand();    // Pseudo-random
+
+        if (pipes[i].x <= 0 - pipes[i].width) {
+            // Initialize the values of the top Pipe struct
+            pipes[i] = (Pipe) {
+                    .x = pipes[furthestPipeIndex].x + 64 - score,
+                    .y = 0,
+                    .width = 8,
+                    .height = 8 + (random1 % 3),
+            };
+
+            // Initialize the values of the bottom Pipe struct
+            pipes[i + 1] = (Pipe) {
+                    .x = pipes[i].x,
+                    .y = 32 - (8 + (random2 % 3)),
+                    .width = 8,
+                    .height = 34 - pipes[i + 1].y + 1,
+            };
+            furthestPipeIndex = i;
+        }
     }
 }
 
@@ -462,6 +478,14 @@ void displayHighScores() {
         }
         line++;
     }
+}
+
+// Generates a pseudo-random number using the LCG algorithm.
+// Did not manage to get a proper random generator to work, so resorted to this
+// https://github.com/Zielon/PBRVulkan/blob/master/PBRVulkan/RayTracer/src/Assets/Shaders/Common/Random.glsl
+int lcg_rand() {
+    lcg_state = (LCG_A * lcg_state + LCG_C) % LCG_M;
+    return (int) (lcg_state >> 1);
 }
 
 void drawDeathAnimation(Bird *bird) {

@@ -10,8 +10,6 @@
 #include <stdint.h>  /* Declarations of uint_32 and the like */
 #include "pic32mx.h"  /* Declarations of system-specific addresses etc */
 #include "Declarations.h" /* Declatations for these labs */
-#include <stdlib.h>
-#include <string.h>
 
 #define gravity 1
 #define start_X 5
@@ -24,13 +22,12 @@ char alphabet[27];
 char initials[] = {'A', 'A'};
 char topPlayers[] = {' ', ' ', ' ', ' ', ' ', ' '};
 int topScores[] = {0, 0, 0};
-char initialString[2] = {'A', 'A'};
 int score = 0;
-int numPipes = 16;
+int numPipes = 12;
 
 bool pressed = false;
 
-Pipe pipes[16];
+Pipe pipes[12];
 
 Bird bird = {
         .x = start_X,
@@ -54,10 +51,10 @@ void gameInit(void) {
     for (i = 0; i < 26; i++) {
         alphabet[i] = 'A' + i;
     }
-
+    resetGame();
+    gameState = 0;
     display_init();
     display_clear_strings();
-    gameState = 0;
 }
 /* This function is called repetitively from the main program */
 // Game states: 0 = start menu, 1 = game, 2 = end screen
@@ -74,8 +71,6 @@ void gameWork(void) {
             display_string(3, "continue");
             display_update();
 
-            //display_image(96, icon);
-
             delay(5);
 
             // Check if a button is pressed to start the game
@@ -88,7 +83,6 @@ void gameWork(void) {
 
     // Game is live
     if (gameState == 1) {
-
         initPipes();
 
         // Freeze-frame for the first second of round start
@@ -130,7 +124,6 @@ void gameWork(void) {
             if (gameTick % 5 == 0) {
                 bird.y += gravity; // Gravity, positive since the Y-axis is inverted
                 movePipes();
-                display_image(0, canvas);
             }
 
             int btn = getbtns();

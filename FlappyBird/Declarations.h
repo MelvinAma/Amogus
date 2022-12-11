@@ -116,6 +116,8 @@ void displayHighScores();
 
 void waitForInput();
 
+int lcg_rand();
+
 void quicksort(int arr[], int low, int high);
 
 void initPipes();
@@ -128,8 +130,6 @@ int getsw(void);
 int numPipes;
 
 int gameState;
-
-char initialString[2];
 
 int score;
 
