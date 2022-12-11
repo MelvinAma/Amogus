@@ -370,6 +370,43 @@ bool collision() {
     return 0;
 }
 
+void drawDeathAnimation(Bird *bird) {
+    int x = bird->x;
+    int y = bird->y;
+
+    lightPixel(x - 5, y - 5);
+    lightPixel(x - 4, y - 5);
+    lightPixel(x - 4, y - 4);
+    lightPixel(x - 3, y - 4);
+    lightPixel(x - 3, y - 3);
+    lightPixel(x - 2, y - 3);
+    lightPixel(x - 2, y - 2);
+
+    lightPixel(x + 5, y + 5);
+    lightPixel(x + 4, y + 5);
+    lightPixel(x + 4, y + 4);
+    lightPixel(x + 3, y + 4);
+    lightPixel(x + 3, y + 3);
+    lightPixel(x + 2, y + 3);
+    lightPixel(x + 2, y + 2);
+
+    lightPixel(x + 5, y - 5);
+    lightPixel(x + 4, y - 5);
+    lightPixel(x + 4, y - 4);
+    lightPixel(x + 3, y - 4);
+    lightPixel(x + 3, y - 3);
+    lightPixel(x + 2, y - 3);
+    lightPixel(x + 2, y - 2);
+
+    lightPixel(x - 5, y + 5);
+    lightPixel(x - 4, y + 5);
+    lightPixel(x - 4, y + 4);
+    lightPixel(x - 3, y + 4);
+    lightPixel(x - 3, y + 3);
+    lightPixel(x - 2, y + 3);
+    lightPixel(x - 2, y + 2);
+}
+
 void resetGame() {
     bird.x = start_X;
     bird.y = start_Y;
