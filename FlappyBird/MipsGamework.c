@@ -171,9 +171,10 @@ void gameWork(void) {
             handleOutOfBounds();
             gameTick++;
 
-            if (collision()) {  // Game over
+            if (collision() || outOfBounds()) {  // Game over
                 drawDeathAnimation(&bird);
-                delay(1000);
+                display_image(0, canvas);
+                delay(3000);
                 gameState = 2;
             }
         }
@@ -244,13 +245,14 @@ void gameWork(void) {
             display_string(1, "make it into");
             display_string(2, "the top 3 :(");
             display_update();
-            delay(2000);
+
+            waitForInput();
         }
 
         displayHighScores();
         display_update();
 
-        delay(2000);
+        waitForInput();
 
         resetGame();
         gameState = 1;

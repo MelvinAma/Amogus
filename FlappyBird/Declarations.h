@@ -106,11 +106,15 @@ void resetGame();
 
 void movePipes();
 
+void drawDeathAnimation(Bird *bird);
+
 void combineStrings();
 
 void time2string(char *, int);
 
 void displayHighScores();
+
+void waitForInput();
 
 void quicksort(int arr[], int low, int high);
 
@@ -132,6 +136,8 @@ int score;
 char topPlayers[6];
 
 int gameTick;
+
+bool pressed;
 
 char initials[2];
 

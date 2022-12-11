@@ -147,7 +147,19 @@ void display_clear_strings(void) {
     display_update();
 }
 
-// TODO: Får inte en for-loop att funka smh
+void waitForInput() {
+    pressed = true;
+    while (1) {
+        if (buttonIsPushed()) {
+            if (pressed == false) {
+                break;
+            }
+        } else {
+            pressed = false;
+        }
+    }
+}
+
 void countdown(void) {
     display_clear_strings();
 
@@ -157,7 +169,8 @@ void countdown(void) {
     display_string(3, "SW4 : reset game");
 
     display_update();
-    delay(3000);
+
+    waitForInput();
 
     display_clear_strings();
     display_string(2, "   3");
@@ -333,24 +346,19 @@ void movePipes() {
 }
 
 bool outOfBounds() {
-    if (bird.x < 0 || bird.x >= 128 || bird.y < 0 || bird.y >= 32) {
+    if (bird.y <= 0 || bird.y >= 31 - bird.height) {
         return true;
     }
+    return false;
 }
 
 // If the bird is out of bounds, move it back to the screen
 void handleOutOfBounds() {
-    if (bird.x < 0) {
-        bird.x = 2;
+    if (bird.x <= 0) {
+        bird.x = 0;
     }
-    if (bird.x >= 128) {
+    if (bird.x >= 128 + bird.width) {
         bird.x = 126;
-    }
-    if (bird.y < 0) {
-        bird.y = 2;
-    }
-    if (bird.y >= 32) {
-        bird.y = 29;
     }
 }
 
@@ -368,43 +376,6 @@ bool collision() {
         }
     }
     return 0;
-}
-
-void drawDeathAnimation(Bird *bird) {
-    int x = bird->x;
-    int y = bird->y;
-
-    lightPixel(x - 5, y - 5);
-    lightPixel(x - 4, y - 5);
-    lightPixel(x - 4, y - 4);
-    lightPixel(x - 3, y - 4);
-    lightPixel(x - 3, y - 3);
-    lightPixel(x - 2, y - 3);
-    lightPixel(x - 2, y - 2);
-
-    lightPixel(x + 5, y + 5);
-    lightPixel(x + 4, y + 5);
-    lightPixel(x + 4, y + 4);
-    lightPixel(x + 3, y + 4);
-    lightPixel(x + 3, y + 3);
-    lightPixel(x + 2, y + 3);
-    lightPixel(x + 2, y + 2);
-
-    lightPixel(x + 5, y - 5);
-    lightPixel(x + 4, y - 5);
-    lightPixel(x + 4, y - 4);
-    lightPixel(x + 3, y - 4);
-    lightPixel(x + 3, y - 3);
-    lightPixel(x + 2, y - 3);
-    lightPixel(x + 2, y - 2);
-
-    lightPixel(x - 5, y + 5);
-    lightPixel(x - 4, y + 5);
-    lightPixel(x - 4, y + 4);
-    lightPixel(x - 3, y + 4);
-    lightPixel(x - 3, y + 3);
-    lightPixel(x - 2, y + 3);
-    lightPixel(x - 2, y + 2);
 }
 
 void resetGame() {
@@ -491,6 +462,43 @@ void displayHighScores() {
         }
         line++;
     }
+}
+
+void drawDeathAnimation(Bird *bird) {
+    int x = bird->x;
+    int y = bird->y;
+
+    lightPixel(x - 5, y - 5);
+    lightPixel(x - 4, y - 5);
+    lightPixel(x - 4, y - 4);
+    lightPixel(x - 3, y - 4);
+    lightPixel(x - 3, y - 3);
+    lightPixel(x - 2, y - 3);
+    lightPixel(x - 2, y - 2);
+
+    lightPixel(x + 5, y + 5);
+    lightPixel(x + 4, y + 5);
+    lightPixel(x + 4, y + 4);
+    lightPixel(x + 3, y + 4);
+    lightPixel(x + 3, y + 3);
+    lightPixel(x + 2, y + 3);
+    lightPixel(x + 2, y + 2);
+
+    lightPixel(x + 5, y - 5);
+    lightPixel(x + 4, y - 5);
+    lightPixel(x + 4, y - 4);
+    lightPixel(x + 3, y - 4);
+    lightPixel(x + 3, y - 3);
+    lightPixel(x + 2, y - 3);
+    lightPixel(x + 2, y - 2);
+
+    lightPixel(x - 5, y + 5);
+    lightPixel(x - 4, y + 5);
+    lightPixel(x - 4, y + 4);
+    lightPixel(x - 3, y + 4);
+    lightPixel(x - 3, y + 3);
+    lightPixel(x - 2, y + 3);
+    lightPixel(x - 2, y + 2);
 }
 
 void display_image(int x, const uint8_t *data) {
