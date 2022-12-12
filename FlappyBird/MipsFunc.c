@@ -11,10 +11,7 @@
 #include "pic32mx.h"  /* Declarations of system-specific addresses etc */
 #include "Declarations.h"  /* Declatations for these labs */
 #include <stdbool.h>
-#include <string.h>
-#include <stdlib.h>
 #include <math.h>
-#include <stdio.h>
 
 /* Declare a helper function which is local to this file */
 static void num32asc(char *s, int);
@@ -232,8 +229,7 @@ void resetCanvas() {
 void lightPixel(int x, int y) {
     // Check if x and y are out of bounds for the screen
     if (y < 0 || x < 0 || x > 127 || y > 32) {
-        x = -1;
-        y = -1;
+        return;
     }
 
     // Adjust x and y based on the "block" of the screen they are in
@@ -243,9 +239,6 @@ void lightPixel(int x, int y) {
         if (y >= blocks[i] && y < blocks[i] + 8) {
             y = y - blocks[i];
             x = x + 128 * (i + 1);
-            if (x < 128 * (i + 1) || x > 128 * (i + 2)) {
-                x = -1;
-            }
         }
     }
 
@@ -332,10 +325,26 @@ void initPipes() {
 // to display the pipe's movement
 void movePipes() {
     int i;
+    int j;
+    int shift;
+    if (score > 20) {
+        shift = 20;
+    } else {
+        shift = score;
+    }
+
+    // Find the furthest pipe pair
+    furthestPipeIndex = 0;
+    for (j = 0; j < numPipes; j += 2) {
+        if (pipes[j].x > pipes[furthestPipeIndex].x) {
+            furthestPipeIndex = j;
+        }
+    }
+
     for (i = 0; i < numPipes; i += 2) {
         // Update the pipe's position
-        pipes[i].x -= 1;
-        pipes[i + 1].x -= 1;
+        pipes[i].x -= x_speed;
+        pipes[i + 1].x -= x_speed;
 
         int random1 = lcg_rand();    // Pseudo-random
         int random2 = lcg_rand();    // Pseudo-random
@@ -343,7 +352,7 @@ void movePipes() {
         if (pipes[i].x <= 0 - pipes[i].width) {
             // Initialize the values of the top Pipe struct
             pipes[i] = (Pipe) {
-                    .x = pipes[furthestPipeIndex].x + 64 - score,
+                    .x = pipes[furthestPipeIndex].x + 40 - shift,
                     .y = 0,
                     .width = 8,
                     .height = 8 + (random1 % 3),
@@ -356,7 +365,7 @@ void movePipes() {
                     .width = 8,
                     .height = 34 - pipes[i + 1].y + 1,
             };
-            furthestPipeIndex = i;
+            //furthestPipeIndex = i;
         }
     }
 }
@@ -394,11 +403,13 @@ bool collision() {
     return 0;
 }
 
+// Restore values
 void resetGame() {
     bird.x = start_X;
     bird.y = start_Y;
     initials[0] = 'A';
     initials[1] = 'A';
+    x_speed = 1;
     score = 0;
     resetCanvas();
 }
@@ -420,6 +431,7 @@ void swapPlayers(int a, int b) {
     topPlayers[b * 2] = temp;
 }
 
+// Regular quicksort that sorts in ascending order
 void quicksort(int arr[], int low, int high) {
     if (low < high) {
         // Choose pivot and partition the array

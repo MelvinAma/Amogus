@@ -143,6 +143,8 @@ char initials[2];
 
 int topScores[3];
 
+int x_speed;
+
 
 bool buttonIsPushed();
 

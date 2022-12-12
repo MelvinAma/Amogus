@@ -24,6 +24,7 @@ char topPlayers[] = {' ', ' ', ' ', ' ', ' ', ' '};
 int topScores[] = {0, 0, 0};
 int score = 0;
 int numPipes = 12;
+int x_speed = 1;
 
 bool pressed = false;
 
@@ -83,6 +84,14 @@ void gameWork(void) {
 
     // Game is live
     if (gameState == 1) {
+        if (getsw() == 2) {
+            x_speed = 3;
+        } else if (getsw() == 4) {
+            x_speed = 2;
+        } else {
+            x_speed = 1;
+        }
+
         initPipes();
 
         // Freeze-frame for the first second of round start
