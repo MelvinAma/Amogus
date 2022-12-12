@@ -155,6 +155,8 @@ void display_clear_strings(void) {
     display_update();
 }
 
+// Does nothing until a button is pressed,
+// prevents activations caused by the button being held down beforehand
 void waitForInput() {
     pressed = true;
     while (1) {
@@ -218,6 +220,7 @@ bool buttonIsPushed() {
 }
 
 // Remove all markings from the canvas
+// Canvas is set to all 1's (pixels turned off)
 void resetCanvas() {
     int i;
     for (i = 0; i < 512; ++i) {
@@ -229,6 +232,7 @@ void resetCanvas() {
 void lightPixel(int x, int y) {
     // Check if x and y are out of bounds for the screen
     if (y < 0 || x < 0 || x > 127 || y > 32) {
+        // Pixel is outside of screen
         return;
     }
 
@@ -249,6 +253,7 @@ void lightPixel(int x, int y) {
     } else {
         int k = 1;
         int l;
+        // Find the bit's position in the byte
         for (l = 1; l < 8; l++) {
             k *= 2;
             if (y == l) {
@@ -327,13 +332,13 @@ void movePipes() {
     int i;
     int j;
     int shift;
-    if (score > 20) {
+    if (score > 20) { // Prevent pipes from intersecting
         shift = 20;
     } else {
         shift = score;
     }
 
-    // Find the furthest pipe pair
+    // Find the furthest pipe pair and its index
     furthestPipeIndex = 0;
     for (j = 0; j < numPipes; j += 2) {
         if (pipes[j].x > pipes[furthestPipeIndex].x) {
@@ -365,7 +370,6 @@ void movePipes() {
                     .width = 8,
                     .height = 34 - pipes[i + 1].y + 1,
             };
-            //furthestPipeIndex = i;
         }
     }
 }
@@ -378,6 +382,7 @@ bool outOfBounds() {
 }
 
 // If the bird is out of bounds, move it back to the screen
+// (used during testing)
 void handleOutOfBounds() {
     if (bird.x <= 0) {
         bird.x = 0;
@@ -390,7 +395,7 @@ void handleOutOfBounds() {
 // Bounding box collision detection
 // Reference: https://gamedev.stackexchange.com/questions/586/what-is-the-fastest-way-to-work-out-2d-bounding-box-intersection
 bool collision() {
-    // The bounding box around the bird is a 2x2 square centered at (birdX, birdY)
+    // The bird's hitbox is 2x2, with (0,0) being the top-left pixel
     int i;
     for (i = 0; i < numPipes; ++i) {
         if ((fabs((bird.x + bird.width / 2) - (pipes[i].x + pipes[i].width / 2)) * 2 <
@@ -469,7 +474,7 @@ void displayHighScores() {
         int i;
         int j;
 
-        // call itoaconv to convert topScores[2] to a string and store the result in str2
+        // call itoaconv to convert topScores[index] to a string and store the result in str2
         char *itoaResult = itoaconv(topScores[index]);
         for (i = 0; itoaResult[i] != '\0'; i++) {
             str2[i] = itoaResult[i];
@@ -496,6 +501,9 @@ void displayHighScores() {
 // Did not manage to get a proper random generator to work, so resorted to this
 // https://github.com/Zielon/PBRVulkan/blob/master/PBRVulkan/RayTracer/src/Assets/Shaders/Common/Random.glsl
 int lcg_rand() {
+    // lcg_state is initialized to 0
+    // after this, every subsequent call will use the
+    // new lcg_state to calculate the next number
     lcg_state = (LCG_A * lcg_state + LCG_C) % LCG_M;
     return (int) (lcg_state >> 1);
 }

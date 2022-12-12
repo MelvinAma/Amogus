@@ -84,11 +84,13 @@ void gameWork(void) {
 
     // Game is live
     if (gameState == 1) {
-        if (getsw() == 2) {
+
+        // Handle difficulty level
+        if (getsw() == 2) {         // Hard
             x_speed = 3;
-        } else if (getsw() == 4) {
+        } else if (getsw() == 4) {  // Medium
             x_speed = 2;
-        } else {
+        } else {                    // Easy
             x_speed = 1;
         }
 
