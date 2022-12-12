@@ -232,33 +232,46 @@ void resetCanvas() {
 // Makes changes to canvas[] to light pixels on the screen
 void lightPixel(int x, int y) {
     // Check if x and y are out of bounds for the screen
+    // Check if x and y are out of bounds for the screen
     if (y < 0 || x < 0 || x > 127 || y > 32) {
-        // Pixel is outside of screen
-        return;
+        x = -1;
+        y = -1;
     }
 
     // Adjust x and y based on the "block" of the screen they are in
+    // "block" meaning the four different y-sections that the screen is divided into
+    // Does nothing if the y equals 0-7 (first row)
     int blocks[] = {8, 16, 24};
     int i;
     for (i = 0; i < 3; i++) {
+
+        // check which section we should target
         if (y >= blocks[i] && y < blocks[i] + 8) {
+
+            // remove from y based on the row to get a number between 0-7
             y = y - blocks[i];
+
+            // simulate row change by adding 128 for every additional row
             x = x + 128 * (i + 1);
+
         }
     }
 
     // Perform a bit manipulation operation on canvas[x] based on y
+
+    // if y == 0, we want to target and change the first bit in the canvas array byte value
     if (y == 0) {
         int write = ~1;
-        canvas[x] = canvas[x] & write;
+        canvas[x] = canvas[x] & write; // bitwise and (1111 & 1110 --> 1110)
+    // if not, we find it by looping through every byte, checking for correct y, then changing the canvas 
     } else {
         int k = 1;
         int l;
-        // Find the bit's position in the byte
         for (l = 1; l < 8; l++) {
+            // k will be (00000010, 00000100) and so on
             k *= 2;
             if (y == l) {
-                int write = ~k;
+                int write = ~k; // invert ex. (00000010 --> 11111101)
                 canvas[x] = canvas[x] & write;
             }
         }
