@@ -25,6 +25,7 @@ static void num32asc(char *s, int);
 #define DISPLAY_ACTIVATE_VDD (PORTFCLR = 0x40)
 #define DISPLAY_ACTIVATE_VBAT (PORTFCLR = 0x20)
 
+
 #define gravity 1
 #define start_X 5
 #define start_Y 5
@@ -231,33 +232,45 @@ void resetCanvas() {
 // Makes changes to canvas[] to light pixels on the screen
 void lightPixel(int x, int y) {
     // Check if x and y are out of bounds for the screen
+    // Check if x and y are out of bounds for the screen
     if (y < 0 || x < 0 || x > 127 || y > 32) {
-        // Pixel is outside of screen
         return;
     }
 
     // Adjust x and y based on the "block" of the screen they are in
+    // "block" meaning the four different y-sections that the screen is divided into
+    // Does nothing if the y equals 0-7 (first row)
     int blocks[] = {8, 16, 24};
     int i;
     for (i = 0; i < 3; i++) {
+
+        // check which section we should target
         if (y >= blocks[i] && y < blocks[i] + 8) {
+
+            // remove from y based on the row to get a number between 0-7
             y = y - blocks[i];
+
+            // simulate row change by adding 128 for every additional row
             x = x + 128 * (i + 1);
+
         }
     }
 
     // Perform a bit manipulation operation on canvas[x] based on y
+
+    // if y == 0, we want to target and change the first bit in the canvas array byte value
     if (y == 0) {
         int write = ~1;
-        canvas[x] = canvas[x] & write;
+        canvas[x] = canvas[x] & write; // bitwise and (1111 & 1110 --> 1110)
+        // if not, we find it by looping through every byte, checking for correct y, then changing the canvas
     } else {
         int k = 1;
         int l;
-        // Find the bit's position in the byte
         for (l = 1; l < 8; l++) {
+            // k will be (00000010, 00000100) and so on
             k *= 2;
             if (y == l) {
-                int write = ~k;
+                int write = ~k; // invert ex. (00000010 --> 11111101)
                 canvas[x] = canvas[x] & write;
             }
         }
@@ -309,15 +322,15 @@ void initPipes() {
                 .x = i * 22 + 64 - score,
                 .y = 0,
                 .width = 8,
-                .height = 8 + (random1 % 3),
+                .height = 8 + (random1 % 5),
         };
 
         // Initialize the values of the bottom Pipe struct
         pipes[i + 1] = (Pipe) {
                 .x = pipes[i].x,
-                .y = 32 - (8 + (random2 % 3)),
+                .y = 32 - (8 + (random2 % 5)),
                 .width = 8,
-                .height = 34 - pipes[i + 1].y,
+                .height = 34 - pipes[i + 1].y + 10,
         };
     }
 }
@@ -360,15 +373,15 @@ void movePipes() {
                     .x = pipes[furthestPipeIndex].x + 40 - shift,
                     .y = 0,
                     .width = 8,
-                    .height = 8 + (random1 % 3),
+                    .height = 8 + (random1 % 5),
             };
 
             // Initialize the values of the bottom Pipe struct
             pipes[i + 1] = (Pipe) {
                     .x = pipes[i].x,
-                    .y = 32 - (8 + (random2 % 3)),
+                    .y = 32 - (8 + (random2 % 5)),
                     .width = 8,
-                    .height = 34 - pipes[i + 1].y + 1,
+                    .height = 34 - pipes[i + 1].y + 10,
             };
         }
     }
@@ -387,21 +400,20 @@ void handleOutOfBounds() {
     if (bird.x <= 0) {
         bird.x = 0;
     }
-    if (bird.x >= 128 + bird.width) {
+    if (bird.x >= 126 + bird.width) {
         bird.x = 126;
     }
 }
 
 // Bounding box collision detection
-// Reference: https://gamedev.stackexchange.com/questions/586/what-is-the-fastest-way-to-work-out-2d-bounding-box-intersection
 bool collision() {
     // The bird's hitbox is 2x2, with (0,0) being the top-left pixel
     int i;
     for (i = 0; i < numPipes; ++i) {
-        if ((fabs((bird.x + bird.width / 2) - (pipes[i].x + pipes[i].width / 2)) * 2 <
-             (bird.width + pipes[i].width)) &&
-            (fabs((bird.y + bird.height / 2) - (pipes[i].y + pipes[i].height / 2)) * 2 <
-             (bird.height + pipes[i].height))) {
+        if (bird.x < pipes[i].x + pipes[i].width &&
+            bird.x + bird.width > pipes[i].x &&
+            bird.y < pipes[i].y + pipes[i].height &&
+            bird.height + bird.y > pipes[i].y) {
             return 1;
         }
     }
@@ -504,6 +516,7 @@ int lcg_rand() {
     // lcg_state is initialized to 0
     // after this, every subsequent call will use the
     // new lcg_state to calculate the next number
+    lcg_state = TMR2;
     lcg_state = (LCG_A * lcg_state + LCG_C) % LCG_M;
     return (int) (lcg_state >> 1);
 }

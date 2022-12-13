@@ -56,6 +56,13 @@ void gameInit(void) {
     gameState = 0;
     display_init();
     display_clear_strings();
+
+    // Init timer used for pseudo-random seeding
+    T2CON = 0x70; // Stop timer and clear control register, set prescaler at 1:256
+    TMR2 = 0x0;   // Clear timer register
+    // prescale have to be 1:256 or else the number gets larger than 2^16
+    PR2 = (80000000 / 256) / 10; // time-out period of 100ms
+    T2CONSET = 0x8000;           // Start timer
 }
 /* This function is called repetitively from the main program */
 // Game states: 0 = start menu, 1 = game, 2 = end screen
